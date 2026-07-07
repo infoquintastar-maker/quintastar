@@ -10,9 +10,11 @@ module.exports = async function handler(req, res) {
       headers: { 'Authorization': 'Bearer ' + API_KEY, 'Version': '2021-07-28' }
     });
     const data = await ghlRes.json();
-    if (!ghlRes.ok) return res.status(400).json({ error: 'GHL error', details: data });
-    const contacts = (data.contacts || []).sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-    return res.status(200).json({ contacts, total: data.meta?.total || contacts.length });
+    if (!ghlRes.ok) return res.status(400).json({ error: 'Error GHL', details: data });
+    const contacts = (data.contacts || [])
+      .filter(c => c.tags && c.tags.includes('desde-app'))
+      .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+    return res.status(200).json({ contacts, total: contacts.length });
   } catch (err) {
     return res.status(500).json({ error: 'Connection error', message: err.message });
   }
