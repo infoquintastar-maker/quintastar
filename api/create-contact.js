@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
     const ghlRes = await fetch('https://services.leadconnectorhq.com/contacts/', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + API_KEY, 'Version': '2021-07-28', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, phone, locationId: LOCATION_ID })
+     body: JSON.stringify({ firstName, lastName, phone, locationId: LOCATION_ID, tags: ['desde-app'] })
     });
     const data = await ghlRes.json();
     if (ghlRes.ok) return res.status(200).json({ success: true });
