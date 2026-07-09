@@ -1,5 +1,5 @@
 const API_KEY     = 'pit-d4ba4162-abfa-46c4-b1b9-d766de021f2c';
-const LOCATION_ID = 'xPcJ8yAznzZ88ItNNevZ';
+const LOCATION_ID = 'xFlS4W9wbaoF9ayQlEQE';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
