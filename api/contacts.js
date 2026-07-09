@@ -3,19 +3,46 @@ const LOCATION_ID = 'xPcJ8yAznzZ88ItNNevZ';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { name, phone } = req.body || {};
+  if (!name || !phone) return res.status(400).json({ error: 'Faltan campos requeridos.' });
+
+  const parts = name.trim().split(/\s+/);
+  const firstName = parts[0];
+  const lastName  = parts.slice(1).join(' ') || '';
+
+  const headers = {
+    'Authorization': 'Bearer ' + API_KEY,
+    'Version': '2021-07-28',
+    'Content-Type': 'application/json'
+  };
+
   try {
-    const url = `https://services.leadconnectorhq.com/contacts/?locationId=${LOCATION_ID}&limit=100`;
-    const ghlRes = await fetch(url, {
-      headers: { 'Authorization': 'Bearer ' + API_KEY, 'Version': '2021-07-28' }
+    // Paso 1: crear contacto
+    const createRes = await fetch('https://services.leadconnectorhq.com/contacts/', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ firstName, lastName, phone, locationId: LOCATION_ID })
     });
-    const data = await ghlRes.json();
-    if (!ghlRes.ok) return res.status(400).json({ error: 'Error GHL', details: data });
-    const contacts = (data.contacts || [])
-      .filter(c => c.tags && c.tags.includes('desde-app'))
-      .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-    return res.status(200).json({ contacts, total: contacts.length });
+    const createData = await createRes.json();
+    if (!createRes.ok) return res.status(400).json({ error: createData?.message || 'Error del CRM.' });
+
+    // Paso 2: añadir tag desde-app
+    const contactId = createData.contact?.id;
+    if (contactId) {
+      await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/tags`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ tags: ['desde-app'] })
+      });
+    }
+
+    return res.status(200).json({ success: true });
   } catch (err) {
-    return res.status(500).json({ error: 'Connection error', message: err.message });
+    return res.status(500).json({ error: 'Error de conexión.' });
   }
 };
